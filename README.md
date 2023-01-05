@@ -16,7 +16,7 @@
   Do not use quotes on the <details> tag attributes.
 -->
 
-<!--step0-->
+<!--step0
 
 Create two deployment workflows using GitHub Actions and Microsoft Azure.
 
@@ -36,9 +36,9 @@ Create two deployment workflows using GitHub Actions and Microsoft Azure.
    ![Create a new repository](https://user-images.githubusercontent.com/1221423/169618722-406dc508-add4-4074-83f0-c7a7ad87f6f3.png)
 3. After your new repository is created, wait about 20 seconds, then refresh the page. Follow the step-by-step instructions in the new repository's README.
 
-<!--endstep0-->
+endstep0-->
 
-<details id=1>
+<details id=1 open>
 <summary><h2>Step 1: Trigger a job based on labels</h2></summary>
 
 ![Screen Shot 2022-06-07 at 4 01 43 PM](https://user-images.githubusercontent.com/6351798/172490466-00f27580-8906-471f-ae83-ef3b6370df7d.png)
@@ -164,7 +164,7 @@ We won't be going into detail on the steps of this workflow, but it would be a g
 
   <details>
   <summary> If you'd like to copy the full workflow file, it should look like this: </summary>
-  
+
   ```yaml
   name: Deploy to staging
 
@@ -188,12 +188,12 @@ We won't be going into detail on the steps of this workflow, but it would be a g
       runs-on: ubuntu-latest
 
       steps:
-        - uses: actions/checkout@v1
+        - uses: actions/checkout@v3
         - name: npm install and build webpack
           run: |
             npm install
             npm run build
-        - uses: actions/upload-artifact@main
+        - uses: actions/upload-artifact@v3
           with:
             name: webpack artifacts
             path: public/
@@ -204,16 +204,16 @@ We won't be going into detail on the steps of this workflow, but it would be a g
       name: Build image and store in GitHub Container Registry
       steps:
         - name: Checkout
-          uses: actions/checkout@v1
+          uses: actions/checkout@v3
 
         - name: Download built artifact
-          uses: actions/download-artifact@main
+          uses: actions/download-artifact@v3
           with:
             name: webpack artifacts
             path: public
 
         - name: Log in to GHCR
-          uses: docker/login-action@v1.14.1
+          uses: docker/login-action@v2
           with:
             registry: ${{ env.IMAGE_REGISTRY_URL }}
             username: ${{ github.actor }}
@@ -221,14 +221,14 @@ We won't be going into detail on the steps of this workflow, but it would be a g
 
         - name: Extract metadata (tags, labels) for Docker
           id: meta
-          uses: docker/metadata-action@v3.7.0
+          uses: docker/metadata-action@v4
           with:
             images: ${{env.IMAGE_REGISTRY_URL}}/${{ github.repository }}/${{env.DOCKER_IMAGE_NAME}}
             tags: |
               type=sha,format=long,prefix=
 
         - name: Build and push Docker image
-          uses: docker/build-push-action@v2.10.0
+          uses: docker/build-push-action@v3
           with:
             context: .
             push: true
@@ -257,12 +257,16 @@ We won't be going into detail on the steps of this workflow, but it would be a g
             app-name: ${{env.AZURE_WEBAPP_NAME}}
             images: ${{env.IMAGE_REGISTRY_URL}}/${{ github.repository }}/${{env.DOCKER_IMAGE_NAME}}:${{ github.sha }}
 
-        - name: Azure logout
-          run: |
-            az logout
+        - name: Azure logout via Azure CLI
+          uses: azure/CLI@v1
+          with:
+            inlineScript: |
+              az logout
+              az cache purge
+              az account clear
   ```
   </details>
-  
+
 16. Click **Start commit** and commit to the `staging-workflow` branch.
 
 > **Note**: Wait about 20 seconds then refresh this page for GitHub Actions to run before continuing to the next step.
@@ -395,12 +399,12 @@ In our case, we can match our production environment to be exactly like our stag
       runs-on: ubuntu-latest
 
       steps:
-        - uses: actions/checkout@v1
+        - uses: actions/checkout@v3
         - name: npm install and build webpack
           run: |
             npm install
             npm run build
-        - uses: actions/upload-artifact@main
+        - uses: actions/upload-artifact@v3
           with:
             name: webpack artifacts
             path: public/
@@ -411,16 +415,16 @@ In our case, we can match our production environment to be exactly like our stag
       name: Build image and store in GitHub Container Registry
       steps:
         - name: Checkout
-          uses: actions/checkout@v1
+          uses: actions/checkout@v3
 
         - name: Download built artifact
-          uses: actions/download-artifact@main
+          uses: actions/download-artifact@v3
           with:
             name: webpack artifacts
             path: public
 
         - name: Log in to GHCR
-          uses: docker/login-action@v1.14.1
+          uses: docker/login-action@v2
           with:
             registry: ${{ env.IMAGE_REGISTRY_URL }}
             username: ${{ github.actor }}
@@ -428,14 +432,14 @@ In our case, we can match our production environment to be exactly like our stag
 
         - name: Extract metadata (tags, labels) for Docker
           id: meta
-          uses: docker/metadata-action@v3.7.0
+          uses: docker/metadata-action@v4
           with:
             images: ${{env.IMAGE_REGISTRY_URL}}/${{ github.repository }}/${{env.DOCKER_IMAGE_NAME}}
             tags: |
               type=sha,format=long,prefix=
 
         - name: Build and push Docker image
-          uses: docker/build-push-action@v2.10.0
+          uses: docker/build-push-action@v3
           with:
             context: .
             push: true
@@ -464,9 +468,13 @@ In our case, we can match our production environment to be exactly like our stag
             app-name: ${{env.AZURE_WEBAPP_NAME}}
             images: ${{env.IMAGE_REGISTRY_URL}}/${{ github.repository }}/${{env.DOCKER_IMAGE_NAME}}:${{github.sha}}
 
-        - name: Azure logout
-          run: |
-            az logout
+        - name: Azure logout via Azure CLI
+          uses: azure/CLI@v1
+          with:
+            inlineScript: |
+              az logout
+              az cache purge
+              az account clear
   ```
 
 1. Commit your changes to the `production-deployment-workflow` branch.
